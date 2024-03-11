@@ -53,24 +53,27 @@ and follow the on-screen prompts to connect to the server.
 
 * Standard Python libraries: socket, threading, json
 
-## Planned Features
-### Enhanced Secure Messaging with RSA Encryption
-A significant upgrade planned for the chat application is to enhance message security using RSA encryption. This improvement aims to bolster the confidentiality and integrity of the messages exchanged, employing an asymmetric encryption model where the server encrypts outgoing messages with its RSA private key, and users decrypt them with the corresponding public key.
 
-Updated Encryption Workflow:
-* **User-to-Server Encryption:** Users will continue to encrypt messages sent to the server using their own RSA private keys. The server, holding each user's public key, will decrypt these messages to verify authenticity and read the content.
-* **Server-to-User Encryption:** For outgoing messages, the server will encrypt responses and broadcasts using its RSA private key. Clients, equipped with the server's public key, will be able to decrypt these messages, ensuring that messages are securely transmitted and can be authenticated as coming directly from the server.
-* **Key Management and Registration:**
-    * **Public Key Submission:** Users are required to submit their public keys to the server for initial setup. To enhance security, the addition of a new public key to the server's directory will require approval by the server administrator or host. This manual verification step ensures that only authorized users can communicate through the server.
-    * **Server Key Distribution:** The server's public key will be distributed to users securely, allowing their clients to decrypt messages from the server. Strategies for secure key distribution could include direct transmission upon user validation or downloading from a secure, authenticated location.
+## Enhanced Security with RSA Encryption Implementation
 
-**Goals for Implementation:**
-* Integrate RSA encryption for both user-to-server and server-to-user message transmissions, ensuring end-to-end security.
-* Develop a secure, administrative process for the submission and approval of user public keys, including mechanisms for key verification and acceptance.
-* Modify the client and server applications to support the encryption and decryption processes, including handling the server's public key on the client side and managing user keys on the server side.
-* Provide robust documentation and user guidance for managing RSA keys, including instructions for key generation, submission, and the secure acquisition of the server's public key.
-### Impact and User Experience Considerations:
-The introduction of RSA encryption for secure messaging will necessitate changes to the user experience, specifically in key management and the initial setup process. Users will need to generate RSA key pairs, submit their public keys for server approval, and securely obtain the server's public key. Although these steps add complexity to the user setup process, they are essential for achieving a higher level of security and trust within the chat application. Efforts will be made to streamline these processes and provide clear, user-friendly instructions and support.
+### Encryption Workflow:
+* **User-to-Server Encryption:** When clients send messages to the server, these messages are encrypted using the server's public key. This ensures that only the server, which possesses the corresponding private key, can decrypt and read these messages.
+
+* **Server-to-User Encryption:** The server encrypts outgoing messages or broadcasts using the client's public key before sending them out. This way, only the intended recipient, who has the matching private key, can decrypt and understand these messages.
+
+### Key Management:
+* **Public Key Registration:** Clients need to manually submit their public keys to the server (outside of this application). The server then stores these client public keys for future communication. This process ensures that the server can send encrypted messages to each client individually and that no unwanted users can connect.
+
+* **Secure Server Communication:** The server's public key is distributed to clients securely (outside of this application). This public key is used by clients to encrypt their initial username submission and all subsequent messages.
+
+### Goals for RSA Encryption Integration:
+* **End-to-End Security:** Implement RSA encryption for all messages exchanged between the client and the server, ensuring that each message's confidentiality and integrity are preserved.
+
+* **Key Management:** While the introduction of encryption adds complexity, this is made to ensure that only wanted users are able to connect to the server.
+
+* **User Experience Considerations:**
+Integrating RSA encryption requires users to manage cryptographic keys. While this adds a step to the initial setup, it's a critical component for securing communications. The application is designed to make this process as smooth as possible, but not providing guidance for key generation and setup.
+
 
 ## Project Background
 This chat application is a hobby project created for the purposes of self-education and exploration in the field of network programming and cybersecurity. It serves as a practical platform to apply and deepen my understanding of programming concepts, socket communication, and encryption techniques.

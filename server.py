@@ -3,9 +3,11 @@ import socket
 import threading
 import json
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
+
+# Set up key directory
+
 
 # List to keep track of all connected clients
 clients = []
@@ -13,11 +15,20 @@ clients = []
 # Dictionary to map client connections to usernames
 client_usernames = {}
 
+# User keys
+client_public_keys = {}
+
 # Global flag to control the server's main loop
 shutdown_server = False
 
+# Set up server keys
 private_key_path = 'private_key.pem'
 public_key_path = 'public_key.pem'
+
+# Set up user key directory
+keys_dir = 'keys'
+if not os.path.exists(keys_dir):
+    os.makedirs(keys_dir)
 
 if not (os.path.exists(private_key_path) and os.path.exists(public_key_path)):
     private_key = rsa.generate_private_key(
@@ -62,8 +73,9 @@ else:
 
     print("Existig RSA keys loaded")
 
-def encrypt_message(message):
-    encrypt_message = public_key.encrypt(
+
+def encrypt_message(message, user_public_key):
+    encrypt_message = user_public_key.encrypt(
         message.encode('utf-8'),
         padding.OAEP(
             mgf = padding.MGF1(algorithm = hashes.SHA256()),
@@ -78,11 +90,14 @@ def broadcast_encrypted_message(message, origin):
     for client in list(clients): 
         if client != origin:
             try:
-                encrypted_message = encrypt_message(message)
+                user_public_key = client_public_keys[client]
+                encrypted_message = encrypt_message(message, user_public_key)
                 client.send(encrypted_message)
-            except:
+            except Exception as e:
+                print(f"Error encrypting or sending message to client: {e}")
                 clients.remove(client)
                 del client_usernames[client] 
+                del client_public_keys[client]
                 client.close()
 
 def decrypt_message(encrypted_message, private_key):
@@ -104,16 +119,20 @@ def client_handler(connection):
         # The first message from the client will be their username
         encrypted_username = connection.recv(1024)
         username = decrypt_message(encrypted_username, private_key)
-        client_usernames[connection] = username
+        key_path = os.path.join('keys', f"key_{username}.pem")
+        if not os.path.exists(key_path):
+            print(f"Key for {username} not found, declining connection.")
+            connection.close()
+            return
+        with open(key_path, 'rb') as key_file:
+            user_public_key = serialization.load_pem_public_key(key_file.read())
+            client_usernames[connection] = username
+            client_public_keys[connection] = user_public_key
+            encrypted_welcome_message = encrypt_message("You have connected to the server", user_public_key)
+            connection.send(encrypted_welcome_message)
     except Exception as e:
         print(f"Error receiving username: {e}")
-    
-    try:
-        encrypted_message = connection.recv(1024)
-        username = decrypt_message(encrypted_message, private_key)
-        client_usernames[connection] = username
-    except Exception as e:
-        print(f"Error receiving or decrypting username: {e}")
+        connection.close()
         return
     
     while True:
@@ -161,8 +180,6 @@ def start_server():
         while not shutdown_server:
             try:
                 connection, address = server.accept()
-                encrypted_welcome_message = encrypt_message("You have connected to the server")
-                connection.send(encrypted_welcome_message)
                 clients.append(connection)
                 print(f"Connected to: {address}")
                 thread = threading.Thread(target=client_handler, args=(connection,))
