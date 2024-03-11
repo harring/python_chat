@@ -1,31 +1,38 @@
-# Simple Python Chat Application
+# Simple Python Chat Application with RSA Encryption
 
-This simple Python chat application enables real-time text communication between multiple clients through a central server. Built with simplicity in mind, it leverages Python's standard library, particularly socket and threading, to handle network connections and concurrent message handling. The application is split into two main components: client.py and server.py, each handling their respective roles in the chat system.
+This Python chat application facilitates secure, real-time text communication between multiple clients through a central server. With simplicity and security as its core principles, it integrates RSA encryption to ensure end-to-end confidentiality and integrity of messages. The application utilizes Python's standard library, particularly socket and threading, for network connections and concurrent message handling, and includes RSA for robust security. The system is divided into two main components: client.py and server.py, each responsible for their specific functions within the chat ecosystem.
 
 ## Features
-Client-Side Script (client.py): Allows users to connect to a chat server, send messages, and receive real-time updates from other clients. The user is prompted to enter the server IP address, port, and a username upon launch.
+**Client-Side Script (client.py):** Enables users to securely connect to a chat server, send encrypted messages, and receive real-time updates from other clients. Users are prompted to enter the server IP address, port, and a username upon launch. The use of RSA encryption requires users to also manage cryptographic keys, enhancing the security of communications.
 
-Connection setup using IP address and port
-Username-based identification
-Real-time message sending and receiving
-Ability to exit the chat cleanly with /exit command
-Server-Side Script (server.py): Manages incoming client connections, broadcasts messages to all clients except the sender, and supports server shutdown through a special command. It reads server IP and port configuration from a config.json file.
+* Connection setup using IP address and port
+* Username-based identification with encrypted submission
+* Real-time, encrypted message sending and receiving
+* Ability to exit the chat cleanly with /exit command
+* RSA encryption for securing messages
 
-Handles multiple client connections
-Broadcasts messages to all connected clients except the message origin
-Special /shutdown command for safe server shutdown
-Client tracking and username association
+**Server-Side Script (server.py):** Manages incoming client connections securely, encrypts and broadcasts messages to all clients except the sender, and supports encrypted server shutdown commands. It reads the server IP and port configuration from a config.json file and handles public key management for encryption.
+
+* Handles multiple client connections with encrypted communication
+* Broadcasts encrypted messages to all connected clients except the message origin
+* Special /shutdown command for safe server shutdown, requiring encryption
+* Client tracking and username association with RSA encryption
+VSecure storage and management of client public keys for encryption
+
 ## How It Works
 1. **Server Initialization:**
 
 * Start by running the server.py script. It will load the IP address and port settings from config.json and begin listening for incoming connections.
 * The server handles each client connection in a separate thread, allowing for simultaneous message handling and broadcast.
+* If no RSA keys can be found a pair is generated, the public key needs to be distributed to users.
+* A directory named keys will be created if not existing, this is used to store users public keys in the format "key_username.pem".
 
 2. **Client Connection:**
 
 * Run client.py to start a client instance. The script prompts for the server's IP address, port, and a username.
 * Once connected, clients can send messages to the chat, which are then broadcast to all other connected clients.
 * Clients receive real-time messages from others until they decide to exit by typing /exit.
+* Server public key and user private key is to be stored in the same directory as the script.
 
 ## Configuration
 * Server Configuration (config.json): Before starting the server, ensure the config.json file contains the correct IP address and port number for the server.
