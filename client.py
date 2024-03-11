@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
 
 
-
+# Handles incoming messages, decrypts using private key and prints result
 def receive_messages(client, private_key):
     while True:
         try:
@@ -27,6 +27,7 @@ def receive_messages(client, private_key):
             client.close()
             break
 
+# Starts the client, makes sure keys exist and asks for server information
 def start_client():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
@@ -74,7 +75,7 @@ def start_client():
             message = input("")
             if message == "/exit":
                 break  # Break the loop to exit
-            if message:  # Only send if there's a message to avoid blank "You: "
+            if message: 
                 encrypted_message = server_public_key.encrypt(
                     message.encode('utf-8'),
                     padding.OAEP(

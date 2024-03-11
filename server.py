@@ -30,6 +30,7 @@ keys_dir = 'keys'
 if not os.path.exists(keys_dir):
     os.makedirs(keys_dir)
 
+# Generate server keys if they do not exist
 if not (os.path.exists(private_key_path) and os.path.exists(public_key_path)):
     private_key = rsa.generate_private_key(
         public_exponent=65537,
@@ -57,6 +58,7 @@ if not (os.path.exists(private_key_path) and os.path.exists(public_key_path)):
 
     print("New RSA keys generated")
 
+# Open server keys if they exist
 else:
     with open(private_key_path, 'rb') as private_key_file:
         private_key_pem = private_key_file.read()
@@ -73,7 +75,7 @@ else:
 
     print("Existig RSA keys loaded")
 
-
+# Used to encrypt messages using the users public key
 def encrypt_message(message, user_public_key):
     encrypt_message = user_public_key.encrypt(
         message.encode('utf-8'),
@@ -85,8 +87,8 @@ def encrypt_message(message, user_public_key):
     )
     return encrypt_message
 
+# Used to broadcast incoming messages to all users except sender, using their own private key
 def broadcast_encrypted_message(message, origin):
-    """Sends a message to all clients except the origin."""
     for client in list(clients): 
         if client != origin:
             try:
@@ -100,6 +102,7 @@ def broadcast_encrypted_message(message, origin):
                 del client_public_keys[client]
                 client.close()
 
+# Decrypts incoming messages using the servers private key
 def decrypt_message(encrypted_message, private_key):
     decrypted_message = private_key.decrypt(
         encrypted_message,
@@ -111,6 +114,7 @@ def decrypt_message(encrypted_message, private_key):
     )
     return decrypted_message.decode('utf-8')
 
+#Handles the incoming user connections
 def client_handler(connection):
     """Handles incoming messages from a client and broadcasts them."""
     global shutdown_server
@@ -135,6 +139,7 @@ def client_handler(connection):
         connection.close()
         return
     
+    # Decrypts and broadcasts messeges 
     while True:
         try:
             encrypted_message = connection.recv(1024)
@@ -156,8 +161,8 @@ def client_handler(connection):
     del client_usernames[connection]
     connection.close()
 
+# Server start
 def start_server():
-    """Starts the server and manages incoming connections."""
     global shutdown_server
     
     # Read the configuration from the JSON file
@@ -174,8 +179,10 @@ def start_server():
     server.settimeout(1)
     server.listen()
     
-    print(f"Server started on {server_ip}:{server_port}. Listening for incoming connections...")  # Updated server started log
+    # Prints if the server starts
+    print(f"Server started on {server_ip}:{server_port}. Listening for incoming connections...")
 
+    # Server runs until shutdown_server is true, during that time it handles incoming connections and messages
     try:
         while not shutdown_server:
             try:
