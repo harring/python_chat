@@ -1,11 +1,27 @@
 import socket
 import threading
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.backends import default_backend
 
-def receive_messages(client):
+
+
+def receive_messages(client, private_key):
     while True:
         try:
-            message = client.recv(1024).decode('utf-8')
-            print(message)
+            encrypted_message = client.recv(1024)
+            if encrypted_message:
+                decrypted_message = private_key.decrypt(
+                    encrypted_message,
+                    padding.OAEP(
+                        mgf = padding.MGF1(algorithm = hashes.SHA256()),
+                        algorithm = hashes.SHA256(),
+                        label = None
+                    )
+                )
+                print(decrypted_message.decode('utf-8'))
         except Exception as e:
             print(f"Error receiving message: {e}")
             client.close()
@@ -13,6 +29,14 @@ def receive_messages(client):
 
 def start_client():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    # Load server key
+    with open('server_public_key.pem', 'rb') as key_file:
+        server_public_key = serialization.load_pem_public_key(key_file.read())
+    
+      # Load private key
+    with open('client_private_key.pem', 'rb') as key_file:
+        private_key = serialization.load_pem_private_key(key_file.read(), password = None)
     
     # Prompt the user for IP and port
     server_ip = input("Enter the server IP address: ")
@@ -29,21 +53,37 @@ def start_client():
     except Exception as e:
         print(f"Error connecting to the server: {e}")
         return  # Exit the function if connection fails
-    
+
     username = input("Enter your username: ")
-    client.send(username.encode('utf-8'))  # Send the username to the server immediately after connecting
+    encrypted_username = server_public_key.encrypt(
+        username.encode('utf-8'),
+        padding.OAEP(
+            mgf = padding.MGF1(algorithm = hashes.SHA256()),
+            algorithm = hashes.SHA256(),
+            label = None
+        )
+    )
     
-    thread = threading.Thread(target=receive_messages, args=(client,))
+    thread = threading.Thread(target=receive_messages, args=(client, private_key,))
     thread.daemon = True  # This ensures the thread exits when the main thread does
     thread.start()
     
     try:
+        client.send(encrypted_username)  # Send the username to the server immediately after connecting
         while True:
             message = input("")
             if message == "/exit":
                 break  # Break the loop to exit
             if message:  # Only send if there's a message to avoid blank "You: "
-                client.send(message.encode('utf-8'))
+                encrypted_message = server_public_key.encrypt(
+                    message.encode('utf-8'),
+                    padding.OAEP(
+                        mgf = padding.MGF1(algorithm = hashes.SHA256()),
+                        algorithm = hashes.SHA256(),
+                        label = None
+                    )
+                )
+                client.send(encrypted_message)
     finally:
         client.close()  # Ensure the client socket is closed properly
 
