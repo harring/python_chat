@@ -32,7 +32,7 @@ VSecure storage and management of client public keys for encryption
 * Run client.py to start a client instance. The script prompts for the server's IP address, port, and a username.
 * Once connected, clients can send messages to the chat, which are then broadcast to all other connected clients.
 * Clients receive real-time messages from others until they decide to exit by typing /exit.
-* Server public key and user private key is to be stored in the same directory as the script.
+* Server public key and user private key is to be stored in the same directory as the script. These should be named: server_public_key.pem and client_private_key.pem
 
 ## Configuration
 * Server Configuration (config.json): Before starting the server, ensure the config.json file contains the correct IP address and port number for the server.
