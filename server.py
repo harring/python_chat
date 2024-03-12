@@ -21,6 +21,9 @@ client_public_keys = {}
 # Global flag to control the server's main loop
 shutdown_server = False
 
+# Message history list
+message_history = []
+
 # Set up server keys
 private_key_path = 'private_key.pem'
 public_key_path = 'public_key.pem'
@@ -89,6 +92,11 @@ def encrypt_message(message, user_public_key):
 
 # Used to broadcast incoming messages to all users except sender, using their own private key
 def broadcast_encrypted_message(message, origin):
+    # Manage message history list to keep last 100
+    global message_history
+    message_history.append(message)
+    message_history = message_history[-100:]
+
     for client in list(clients): 
         if client != origin:
             try:
@@ -149,7 +157,15 @@ def client_handler(connection):
                 print("Shutdown command received. Server is shutting down.")
                 shutdown_server = True
                 break
-            if decrypted_message:
+            elif decrypted_message == "/history":
+                if message_history:
+                    history_messages = "\n".join(message_history)
+                    encrypted_history = encrypt_message(history_messages, client_public_keys[connection])
+                    connection.send(encrypted_history)
+                else:
+                    encrypted_message = encrypt_message("No history available", client_public_keys[connection])
+                    connection.send(encrypted_message)
+            elif decrypted_message:
                 full_message = f"{client_usernames[connection]}: {decrypted_message}"
                 print(f"Received: {full_message}")
                 broadcast_encrypted_message(full_message, connection)

@@ -18,6 +18,7 @@ This Python chat application facilitates secure, real-time text communication be
 * Special /shutdown command for safe server shutdown, requiring encryption
 * Client tracking and username association with RSA encryption
 VSecure storage and management of client public keys for encryption
+* Stores message history (last 100 messages by default) which the user can request by sending /history
 
 ## How It Works
 1. **Server Initialization:**
