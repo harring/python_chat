@@ -2,6 +2,9 @@
 *pem
 keys/
 
+# user config
+user_config.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

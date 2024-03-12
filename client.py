@@ -1,5 +1,7 @@
 import socket
 import threading
+import json
+import os
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import hashes
@@ -27,6 +29,13 @@ def receive_messages(client, private_key):
             client.close()
             break
 
+def prompt_user_for_info():
+    server_ip = input("Enter the server IP address: ")
+    server_port = input("Enter the server port: ")
+    username = input("Enter your username: ")
+    return server_ip, server_port, username
+
+
 # Starts the client, makes sure keys exist and asks for server information
 def start_client():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -38,24 +47,30 @@ def start_client():
       # Load private key
     with open('client_private_key.pem', 'rb') as key_file:
         private_key = serialization.load_pem_private_key(key_file.read(), password = None)
-    
-    # Prompt the user for IP and port
-    server_ip = input("Enter the server IP address: ")
-    server_port = input("Enter the server port: ")
-    
+
+    config_path = 'user_config.json'
+
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        server_ip = config.get('server_ip')
+        server_port = config.get('server_port')
+        username = config.get('username')
+
+        if not all([server_ip, server_port, username]):
+            print("Config file is incomplete.")
+            server_ip, server_port, username = prompt_user_for_info()
+
+    else:
+        print("Config file not found, please enter details manually.")
+        server_ip, server_port, username = prompt_user_for_info()
+
     try:
-        server_port = int(server_port)  # Convert port to integer
-    except ValueError:
-        print("Error: Port must be a number")
-        return  # Exit the function if the port is not a number
-    
-    try:
-        client.connect((server_ip, server_port))  # Use the provided IP and port
+        client.connect((server_ip, int(server_port)))
     except Exception as e:
         print(f"Error connecting to the server: {e}")
-        return  # Exit the function if connection fails
+        return
 
-    username = input("Enter your username: ")
     encrypted_username = server_public_key.encrypt(
         username.encode('utf-8'),
         padding.OAEP(
